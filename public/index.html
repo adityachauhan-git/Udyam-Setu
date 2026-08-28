@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#102a43" />
+    <title>Northstar | AI Business Consulting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="brand-panel">
+        <div class="brand-mark" aria-hidden="true">N</div>
+        <p class="eyebrow">Northstar consulting</p>
+        <h1>Make the next move your clearest one.</h1>
+        <p class="brand-copy">A focused workspace for ambitious teams turning complex decisions into practical momentum.</p>
+        <div class="signal-list" aria-label="Platform benefits">
+          <span><i></i>Private by design</span>
+          <span><i></i>Built for decisive teams</span>
+        </div>
+      </section>
+
+      <section class="auth-panel">
+        <div class="panel-topline">
+          <span class="status-dot"></span>
+          <span>Workspace access</span>
+        </div>
+
+        <div id="auth-view">
+          <div class="heading-block">
+            <p class="eyebrow" id="form-eyebrow">Welcome back</p>
+            <h2 id="form-title">Sign in to Northstar</h2>
+            <p id="form-subtitle">Your strategy workspace is ready when you are.</p>
+          </div>
+
+          <div class="tabs" role="tablist" aria-label="Authentication mode">
+            <button class="tab is-active" type="button" data-mode="login" role="tab" aria-selected="true">Sign in</button>
+            <button class="tab" type="button" data-mode="register" role="tab" aria-selected="false">Create account</button>
+          </div>
+
+          <form id="auth-form" novalidate>
+            <label class="field name-field is-hidden" for="name">Full name<input id="name" name="name" type="text" autocomplete="name" /></label>
+            <label class="field" for="email">Work email<input id="email" name="email" type="email" autocomplete="email" placeholder="you@company.com" required /></label>
+            <label class="field" for="password">Password<input id="password" name="password" type="password" autocomplete="current-password" placeholder="At least 8 characters" required /></label>
+            <p class="form-message" id="form-message" role="alert"></p>
+            <button class="primary-button" type="submit"><span id="submit-label">Continue to workspace</span><span class="button-arrow" aria-hidden="true">&rarr;</span></button>
+          </form>
+          <p class="fine-print">By continuing, you agree to keep your workspace secure.</p>
+        </div>
+
+        <div id="onboarding-view" class="is-hidden">
+          <div class="heading-block">
+            <p class="eyebrow">Your starting point</p>
+            <h2>Let’s make this useful.</h2>
+            <p>Answer only what helps us understand your next opportunity.</p>
+          </div>
+          <div class="progress-track"><span id="progress-label">Step 1 of 4</span><div><i id="progress-bar"></i></div></div>
+          <form id="onboarding-form" novalidate>
+            <section class="onboarding-step" data-step="0">
+              <h3>About you</h3>
+              <div class="location-fields">
+                <label class="field" for="onboarding-state">State<select id="onboarding-state"><option value="">Choose a state</option></select></label>
+                <label class="field" for="onboarding-district">District<select id="onboarding-district" disabled><option value="">Choose a district</option></select></label>
+                <label class="field" for="onboarding-village">Village / location<select id="onboarding-village" disabled><option value="">Choose a village</option></select></label>
+              </div>
+              <label class="field" for="age-group">Age group <span class="optional">Optional</span><select id="age-group"><option value="">Prefer not to say</option><option value="under-18">Under 18</option><option value="18-25">18–25</option><option value="26-40">26–40</option><option value="41-60">41–60</option><option value="60+">60+</option></select></label>
+              <label class="field" for="preferred-language">Preferred language<select id="preferred-language" required><option value="">Choose a language</option><option>English</option><option>Hindi</option><option>Marathi</option><option>Kannada</option><option>Tamil</option><option>Telugu</option><option>Bengali</option><option>Gujarati</option><option>Punjabi</option><option>Other</option></select></label>
+            </section>
+            <section class="onboarding-step is-hidden" data-step="1">
+              <h3>Resources you have</h3>
+              <label class="field">Access to land?<span class="choice-row"><button type="button" class="choice" data-field="landAccess" data-value="true">Yes</button><button type="button" class="choice" data-field="landAccess" data-value="false">No</button></span></label>
+              <div class="two-columns"><label class="field">Area<input id="land-area" type="number" min="0" step="0.01" placeholder="e.g. 2" /></label><label class="field">Unit<select id="land-unit"><option value="">Choose unit</option><option value="acre">Acre</option><option value="hectare">Hectare</option><option value="bigha">Bigha</option></select></label></div>
+              <div class="two-columns"><label class="field">Land type<select id="land-type"><option value="">Choose type</option><option value="agricultural">Agricultural</option><option value="residential">Residential</option><option value="other">Other</option></select></label><label class="field">Capital to invest<select id="capital-range"><option value="">Choose range</option><option value="0-25k">₹0–25k</option><option value="25k-1L">₹25k–1L</option><option value="1-5L">₹1–5L</option><option value="5L+">₹5L+</option></select></label></div>
+              <label class="field">Infrastructure available <span class="choice-grid"><button type="button" class="toggle" data-field="electricityAvailable">Electricity</button><button type="button" class="toggle" data-field="internetAvailable">Internet</button><button type="button" class="toggle" data-field="waterAvailable">Water</button><button type="button" class="toggle" data-field="storageAvailable">Storage</button><button type="button" class="toggle" data-field="transportAvailable">Transport</button><button type="button" class="toggle" data-field="equipmentAvailable">Equipment</button></span></label>
+            </section>
+            <section class="onboarding-step is-hidden" data-step="2"><h3>Skills & interests</h3><p class="step-note">Select everything that feels true today.</p><label class="field">What are you good at?<span class="choice-grid multi" id="skills-options"></span></label><label class="field">What work interests you?<span class="choice-grid multi" id="interests-options"></span></label></section>
+            <section class="onboarding-step is-hidden" data-step="3"><h3>What comes next?</h3><label class="field">Your goals<span class="choice-grid multi" id="goals-options"></span></label><label class="field">Desired monthly income <span class="optional">Optional</span><select id="income-range"><option value="">Prefer not to say</option><option value="5k-10k">₹5k–10k</option><option value="10k-25k">₹10k–25k</option><option value="25k-50k">₹25k–50k</option><option value="50k+">₹50k+</option></select></label></section>
+            <p class="form-message" id="onboarding-message" role="alert"></p>
+            <div class="onboarding-actions"><button class="secondary-button back-button" id="back-button" type="button">Back</button><button class="save-button" id="save-button" type="button">Save progress</button><button class="primary-button next-button" id="next-button" type="submit"><span id="next-label">Next</span><span class="button-arrow">&rarr;</span></button></div>
+          </form>
+        </div>
+
+        <div id="user-view" class="user-view is-hidden">
+          <div class="avatar" id="user-avatar">N</div>
+          <p class="eyebrow">You are signed in</p>
+          <h2 id="user-name">Your workspace</h2>
+          <p id="user-email"></p>
+          <p class="user-location" id="user-location"></p>
+          <button class="secondary-button onboarding-button" id="edit-onboarding" type="button">Edit onboarding</button>
+          <button class="secondary-button" id="logout-button" type="button">Sign out</button>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
