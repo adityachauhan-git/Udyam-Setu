@@ -95,9 +95,13 @@ function renderChoices() {
     }));
   });
 
-  document.querySelectorAll(".choice-row .choice, .choice-grid .toggle").forEach((button) => {
-    const value = button.dataset.value === "true" ? true : button.dataset.value === "false" ? false : onboardingData[button.dataset.field];
-    button.classList.toggle("is-selected", value === true);
+  document.querySelectorAll(".choice-row .choice").forEach((button) => {
+    const expected = button.dataset.value === "true";
+    button.classList.toggle("is-selected", onboardingData[button.dataset.field] === expected);
+  });
+
+  document.querySelectorAll(".choice-grid .toggle").forEach((button) => {
+    button.classList.toggle("is-selected", onboardingData[button.dataset.field] === true);
   });
 }
 
@@ -208,13 +212,26 @@ document.querySelector("#onboarding-district").addEventListener("change", (event
 document.querySelectorAll(".choice-row, .choice-grid").forEach((grid) => grid.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button) return;
+
   if (button.dataset.list) {
     const list = onboardingData[button.dataset.list];
     onboardingData[button.dataset.list] = list.includes(button.dataset.value) ? list.filter((value) => value !== button.dataset.value) : [...list, button.dataset.value];
     button.classList.toggle("is-selected");
-  } else {
-    onboardingData[button.dataset.field] = button.classList.toggle("is-selected");
+    return;
   }
+
+  if (button.dataset.value === "true" || button.dataset.value === "false") {
+    const fieldName = button.dataset.field;
+    const nextValue = button.dataset.value === "true";
+    onboardingData[fieldName] = nextValue;
+
+    document.querySelectorAll(`button[data-field="${fieldName}"][data-value]`).forEach((option) => {
+      option.classList.toggle("is-selected", option === button);
+    });
+    return;
+  }
+
+  onboardingData[button.dataset.field] = button.classList.toggle("is-selected");
 }));
 document.querySelector("#onboarding-form").addEventListener("submit", async (event) => {
   event.preventDefault();
