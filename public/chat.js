@@ -128,7 +128,7 @@ function renderChatMessages() {
   chatMessages.innerHTML = "";
 
   if (chatHistory.length === 0) {
-    chatMessages.innerHTML = '<div class="chat-empty">Ask Northstar for business ideas, strategy, or next steps.</div>';
+    chatMessages.innerHTML = '<div class="chat-empty">Ask UdyamSetyu for business ideas, strategy, or next steps.</div>';
     return;
   }
 

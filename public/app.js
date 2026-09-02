@@ -57,7 +57,7 @@ function setMode(nextMode) {
   mode = nextMode;
   const registering = mode === "register";
   document.querySelector("#form-eyebrow").textContent = registering ? "Start with clarity" : "Welcome back";
-  document.querySelector("#form-title").textContent = registering ? "Create your workspace" : "Sign in to Northstar";
+  document.querySelector("#form-title").textContent = registering ? "Create your workspace" : "Sign in to UdyamSetyu";
   document.querySelector("#form-subtitle").textContent = registering ? "Bring your next important decision into focus." : "Your strategy workspace is ready when you are.";
   document.querySelector(".name-field").classList.toggle("is-hidden", !registering);
   document.querySelector("#name").required = registering;
