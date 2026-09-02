@@ -98,7 +98,59 @@ export async function getRecommendedQuestions(profile) {
   return buildRecommendedQuestions(profile ?? {});
 }
 
-export async function sendChatMessage({ message, history = [], userId }) {
+function buildOnboardingContext(profile = {}) {
+  if (!profile || typeof profile !== "object") {
+    return null;
+  }
+
+  const profileParts = [];
+
+  const skills = toArray(profile.skills);
+  const interests = toArray(profile.interests);
+  const goals = toArray(profile.goals);
+
+  const addPart = (label, value) => {
+    if (value === null || value === undefined || value === "") return;
+    if (Array.isArray(value)) {
+      const cleaned = value.filter(Boolean);
+      if (cleaned.length > 0) profileParts.push(`${label}: ${cleaned.join(", ")}`);
+      return;
+    }
+    profileParts.push(`${label}: ${String(value)}`);
+  };
+
+  addPart("Age group", profile.age_group ?? profile.ageGroup);
+  addPart("Preferred language", profile.preferred_language ?? profile.preferredLanguage);
+  addPart("Address", [
+    profile.village_name ?? profile.villageName,
+    profile.district_name ?? profile.districtName,
+    profile.state_name ?? profile.stateName,
+  ].filter(Boolean).join(", ") || null);
+  addPart("Village", profile.village_name ?? profile.villageName ?? profile.village_id ?? profile.villageId);
+  addPart("District", profile.district_name ?? profile.districtName ?? profile.district_id ?? profile.districtId);
+  addPart("State", profile.state_name ?? profile.stateName ?? profile.state_id ?? profile.stateId);
+  addPart("Land access", profile.land_access ?? profile.landAccess);
+  addPart("Land size", profile.land_area ?? profile.landArea);
+  addPart("Land unit", profile.land_unit ?? profile.landUnit);
+  addPart("Land type", profile.land_type ?? profile.landType);
+  addPart("Capital range", profile.capital_range ?? profile.capitalRange);
+  addPart("Desired monthly income", profile.desired_monthly_income_range ?? profile.desiredMonthlyIncomeRange);
+  addPart("Skills", skills);
+  addPart("Interests", interests);
+  addPart("Goals", goals);
+  addPart("Electricity available", profile.electricity_available ?? profile.electricityAvailable);
+  addPart("Internet available", profile.internet_available ?? profile.internetAvailable);
+  addPart("Water available", profile.water_available ?? profile.waterAvailable);
+  addPart("Storage available", profile.storage_available ?? profile.storageAvailable);
+  addPart("Transport available", profile.transport_available ?? profile.transportAvailable);
+  addPart("Equipment available", profile.equipment_available ?? profile.equipmentAvailable);
+
+  return profileParts.length > 0
+    ? `You are helping this user with business advice. Use the onboarding profile as background context for all responses and do not ask the user for information they already provided. Profile summary: ${profileParts.join("; ")}.`
+    : null;
+}
+
+export async function sendChatMessage({ message, history = [], userId, profile = {} }) {
   if (typeof message !== "string" || !message.trim()) {
     throw new AppError("Message is required", 400);
   }
@@ -109,11 +161,23 @@ export async function sendChatMessage({ message, history = [], userId }) {
 
   const modelName = getGeminiModelName();
   const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+  const onboardingContext = buildOnboardingContext(profile);
 
-  const contents = [
+  const contents = [];
+
+  if (onboardingContext) {
+    contents.push({
+      role: "user",
+      parts: [{
+        text: onboardingContext,
+      }],
+    });
+  }
+
+  contents.push(
     ...history.map((entry) => normalizeHistoryEntry(entry)),
     { role: "user", parts: [{ text: message.trim() }] },
-  ];
+  );
 
   console.log("[Gemini prompt payload]", JSON.stringify({ model: modelName, contents }, null, 2));
 

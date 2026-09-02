@@ -3,11 +3,13 @@ import { getRecommendedQuestions, sendChatMessage } from "./chat.service.js";
 
 export async function sendMessage(req, res) {
   const { message, history = [] } = req.body ?? {};
+  const profile = await getOnboarding(req.user.id);
 
   const data = await sendChatMessage({
     message,
     history,
     userId: req.user?.id,
+    profile,
   });
 
   res.status(200).json({

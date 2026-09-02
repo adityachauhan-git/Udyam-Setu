@@ -24,10 +24,12 @@ const joinedProfileColumns = `
 export async function findOnboardingByUserId(userId) {
   const result = await pool.query(
     `SELECT onboarding_profiles.id, onboarding_profiles.user_id, ${joinedProfileColumns},
-        districts.state_id, villages.district_id
+        villages.name AS village_name, districts.name AS district_name,
+        states.name AS state_name, districts.state_id, villages.district_id
      FROM onboarding_profiles
      LEFT JOIN villages ON villages.id = onboarding_profiles.village_id
      LEFT JOIN districts ON districts.id = villages.district_id
+     LEFT JOIN states ON states.id = districts.state_id
      WHERE onboarding_profiles.user_id = $1`,
     [userId],
   );
