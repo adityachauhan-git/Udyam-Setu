@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Northstar | AI Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/chat.css" />
+  </head>
+  <body class="chat-dashboard-body">
+    <div class="dashboard-shell">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="brand-block">
+            <div class="brand-mark">N</div>
+            <div>
+              <p class="eyebrow">Northstar</p>
+              <h2>Workspace</h2>
+            </div>
+          </div>
+          <button class="sidebar-toggle" type="button" aria-label="Toggle sidebar">☰</button>
+        </div>
+
+        <nav class="sidebar-nav" aria-label="Dashboard sections">
+          <button class="nav-toggle active" type="button" data-section="coach">AI coach</button>
+          <button class="nav-toggle" type="button" data-section="opportunities">Opportunities</button>
+          <button class="nav-toggle" type="button" data-section="plan">Plan</button>
+          <button class="nav-toggle" type="button" data-section="profile">Profile</button>
+        </nav>
+
+        <div class="sidebar-profile">
+          <div class="sidebar-user">
+            <div class="avatar" id="user-avatar">N</div>
+            <div>
+              <strong id="user-name">User</strong>
+              <span id="user-role">Business builder</span>
+            </div>
+          </div>
+
+          <div class="profile-summary-box">
+            <p class="eyebrow">Profile</p>
+            <p id="profile-summary">Your profile is being loaded.</p>
+          </div>
+        </div>
+
+        <button id="logout-button" class="secondary-button" type="button">Sign out</button>
+      </aside>
+
+      <main class="main-panel">
+        <button id="sidebar-toggle-floating" class="floating-sidebar-toggle" type="button" aria-label="Toggle sidebar">☰</button>
+        <header class="topbar">
+          <div class="topbar-title-wrap">
+            <span class="topbar-kicker">AI Coach</span>
+          </div>
+          <button id="new-chat" class="primary-button small-button" type="button">New chat</button>
+        </header>
+
+        <section class="workspace-grid">
+          <div class="chat-column">
+            <div class="chat-messages" id="chat-messages" aria-live="polite">
+              <div class="chat-empty">Ask Northstar for business ideas, strategy, or next steps.</div>
+            </div>
+
+            <form id="chat-form" class="chat-form" novalidate>
+              <div class="prompt-picker-wrap">
+                <label class="sr-only" for="chat-suggestions-select">Suggested prompts</label>
+                <select id="chat-suggestions-select" class="chat-suggestions-select" aria-label="Recommended questions">
+                  <option value="">Suggested prompts</option>
+                </select>
+              </div>
+
+              <label class="sr-only" for="chat-input">Message</label>
+              <textarea id="chat-input" rows="4" placeholder="Ask about your idea, market, funding, or next move..."></textarea>
+              <div class="chat-form-actions">
+                <span class="chat-status" id="chat-status" role="status"></span>
+                <button class="primary-button" type="submit">Send</button>
+              </div>
+            </form>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/chat.js" type="module"></script>
+  </body>
+</html>

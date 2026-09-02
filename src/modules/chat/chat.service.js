@@ -2,11 +2,11 @@ import { GoogleGenAI } from "@google/genai";
 import { AppError } from "../../common/errors/AppError.js";
 
 const defaultQuestions = [
-  "What kind of business would you like to start or improve?",
-  "What is your biggest challenge right now?",
-  "Which opportunity fits your current skills best?",
-  "Do you want low-investment ideas or high-growth ideas?",
-  "What would help you generate income fastest?",
+  "What kind of business idea fits my skills best?",
+  "What is my biggest challenge right now?",
+  "Which opportunity fits my current skills best?",
+  "Should I explore low-investment or high-growth ideas?",
+  "What would help me generate income fastest?",
 ];
 
 function getGeminiModelName() {
@@ -68,27 +68,27 @@ export function buildRecommendedQuestions(profile = {}) {
   const incomeRange = profile.desired_monthly_income_range ?? profile.desiredMonthlyIncomeRange;
 
   if (skills.length > 0) {
-    questions.unshift(`Based on your skills in ${skills.slice(0, 2).join(", ")}, which business idea fits you best?`);
+    questions.unshift(`I have skills in ${skills.slice(0, 2).join(", ")}. Which business idea fits me best?`);
   }
 
   if (interests.length > 0) {
-    questions.unshift(`Since you are interested in ${interests.slice(0, 2).join(", ")}, which opportunity would you like to explore first?`);
+    questions.unshift(`I am interested in ${interests.slice(0, 2).join(", ")}. Which opportunity should I explore first?`);
   }
 
   if (goals.includes("Start a new business")) {
-    questions.unshift("You mentioned starting a new business. Should I suggest low-cost ideas or scalable ideas?");
+    questions.unshift("I want to start a business. Should I explore low-cost or scalable ideas?");
   }
 
   if (landAccess === true) {
-    questions.unshift("Since you have access to land, should I suggest farm-based or agri-business opportunities?");
+    questions.unshift("I have access to land. Should I look at farm-based or agri-business opportunities?");
   }
 
   if (capitalRange) {
-    questions.unshift(`You mentioned a capital range of ${capitalRange}. Should I suggest ideas within that budget?`);
+    questions.unshift(`My capital range is ${capitalRange}. Should I focus on ideas that fit that budget?`);
   }
 
   if (incomeRange) {
-    questions.unshift(`You want to target around ${incomeRange}. Should I focus on ideas that can help you reach that income level faster?`);
+    questions.unshift(`I want to reach around ${incomeRange}. Should I focus on ideas that can help me get there faster?`);
   }
 
   return [...new Set(questions)].slice(0, 5);
@@ -114,6 +114,8 @@ export async function sendChatMessage({ message, history = [], userId }) {
     ...history.map((entry) => normalizeHistoryEntry(entry)),
     { role: "user", parts: [{ text: message.trim() }] },
   ];
+
+  console.log("[Gemini prompt payload]", JSON.stringify({ model: modelName, contents }, null, 2));
 
   try {
     const response = await ai.models.generateContent({

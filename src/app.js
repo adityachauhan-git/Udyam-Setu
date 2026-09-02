@@ -16,6 +16,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(publicDirectory));
 
+app.get("/chat", (req, res) => {
+  res.sendFile(path.join(publicDirectory, "chat.html"));
+});
+
 app.get("/api/health", (req, res) => {
   res.json({ success: true, message: "Server is running" });
 });

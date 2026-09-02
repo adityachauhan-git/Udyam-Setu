@@ -68,13 +68,7 @@ function setMode(nextMode) {
 }
 
 function showUser(user) {
-  authView.classList.add("is-hidden");
-  onboardingView.classList.add("is-hidden");
-  userView.classList.remove("is-hidden");
-  document.querySelector("#user-name").textContent = user.name;
-  document.querySelector("#user-email").textContent = user.email;
-  document.querySelector("#user-location").textContent = [user.village, user.district, user.state].filter(Boolean).join(" · ");
-  document.querySelector("#user-avatar").textContent = user.name.charAt(0).toUpperCase();
+  window.location.href = "/chat";
 }
 
 function showError(message) { formMessage.textContent = message; }
@@ -201,8 +195,11 @@ authForm.addEventListener("submit", async (event) => {
     const result = await request(`/api/auth/${mode === "register" ? "register" : "login"}`, { method: "POST", body: JSON.stringify(Object.fromEntries(new FormData(authForm).entries())) });
     localStorage.setItem(tokenKey, result.data.token);
     const profile = await loadOnboarding();
-    if (profile.is_complete) showUser(result.data.user);
-    else await openOnboarding(profile);
+    if (profile.is_complete) {
+      window.location.href = "/chat";
+      return;
+    }
+    await openOnboarding(profile);
   } catch (error) { showError(error.message); }
 });
 
@@ -251,4 +248,4 @@ document.querySelector("#logout-button").addEventListener("click", () => { local
 renderChoices();
 loadStates().catch(() => {});
 const token = localStorage.getItem(tokenKey);
-if (token) loadOnboarding().then(async (profile) => { const me = await request("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } }); if (profile.is_complete) showUser(me.data.user); else openOnboarding(profile); }).catch(() => localStorage.removeItem(tokenKey));
+if (token) loadOnboarding().then(async (profile) => { const me = await request("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } }); if (profile.is_complete) { window.location.href = "/chat"; } else { openOnboarding(profile); } }).catch(() => localStorage.removeItem(tokenKey));
