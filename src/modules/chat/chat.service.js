@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { pool } from "../../common/config/db.js";
 import { AppError } from "../../common/errors/AppError.js";
 
 const defaultQuestions = [
@@ -98,7 +99,45 @@ export async function getRecommendedQuestions(profile) {
   return buildRecommendedQuestions(profile ?? {});
 }
 
-function buildOnboardingContext(profile = {}) {
+function formatBusinessName(value) {
+  return String(value)
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (str) => str.toUpperCase());
+}
+
+async function getNearbyPopularBusinesses(villageId) {
+  if (!villageId) return [];
+
+  try {
+    const result = await pool.query(
+      `SELECT DISTINCT business
+       FROM (
+         SELECT unnest(shared_popular_businesses) AS business
+         FROM villages
+         WHERE id = $1
+         UNION
+         SELECT unnest(v2.shared_popular_businesses) AS business
+         FROM villages v1
+         JOIN villages v2
+           ON v1.id != v2.id
+          AND v1.id = $1
+          AND ST_DWithin(v1.location::geography, v2.location::geography, 10000)
+       ) nearby
+       WHERE business IS NOT NULL AND business <> ''
+       ORDER BY business;`,
+      [villageId],
+    );
+
+    return result.rows.map((row) => formatBusinessName(row.business));
+  } catch (error) {
+    console.warn("Failed to load nearby popular businesses:", error.message);
+    return [];
+  }
+}
+
+function buildOnboardingContext(profile = {}, nearbyBusinesses = []) {
   if (!profile || typeof profile !== "object") {
     return null;
   }
@@ -120,7 +159,7 @@ function buildOnboardingContext(profile = {}) {
   };
 
   addPart("Age group", profile.age_group ?? profile.ageGroup);
-  addPart("Preferred language", profile.preferred_language ?? profile.preferredLanguage);
+  addPart("Preferred language(try to answer in this language)", profile.preferred_language ?? profile.preferredLanguage);
   addPart("Address", [
     profile.village_name ?? profile.villageName,
     profile.district_name ?? profile.districtName,
@@ -138,6 +177,7 @@ function buildOnboardingContext(profile = {}) {
   addPart("Skills", skills);
   addPart("Interests", interests);
   addPart("Goals", goals);
+  addPart("Popular businesses within 10 km", nearbyBusinesses);
   addPart("Electricity available", profile.electricity_available ?? profile.electricityAvailable);
   addPart("Internet available", profile.internet_available ?? profile.internetAvailable);
   addPart("Water available", profile.water_available ?? profile.waterAvailable);
@@ -146,7 +186,7 @@ function buildOnboardingContext(profile = {}) {
   addPart("Equipment available", profile.equipment_available ?? profile.equipmentAvailable);
 
   return profileParts.length > 0
-    ? `You are helping this user with business advice. Use the onboarding profile as background context for all responses and do not ask the user for information they already provided. Profile summary: ${profileParts.join("; ")}.`
+    ? `You are helping this user with business advice. Use the onboarding profile as background context for all responses and do not ask the user for information they already provided. Prioritize opportunities that are popular and practical near the user’s location within a 10 km radius. If nearby popular businesses are listed, treat them as strong local signals and prefer recommendations aligned with those local demand patterns. Profile summary: ${profileParts.join("; ")}.`
     : null;
 }
 
@@ -161,7 +201,8 @@ export async function sendChatMessage({ message, history = [], userId, profile =
 
   const modelName = getGeminiModelName();
   const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
-  const onboardingContext = buildOnboardingContext(profile);
+  const nearbyBusinesses = await getNearbyPopularBusinesses(profile?.village_id ?? profile?.villageId);
+  const onboardingContext = buildOnboardingContext(profile, nearbyBusinesses);
 
   const contents = [];
 
