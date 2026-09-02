@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { errorMiddleware } from "./common/middleware/error.middleware.js";
 import authRoutes from "./modules/auth/auth.routes.js";
+import chatRoutes from "./modules/chat/chat.routes.js";
 import locationRoutes from "./modules/locations/location.routes.js";
 import onboardingRoutes from "./modules/onboarding/onboarding.routes.js";
 
@@ -20,6 +21,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/chat", chatRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/onboarding", onboardingRoutes);
 app.use(errorMiddleware);
