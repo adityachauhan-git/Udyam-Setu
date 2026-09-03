@@ -6,5 +6,10 @@ export function errorMiddleware(error, req, res, next) {
     console.error(error);
   }
 
+  if (statusCode === 503) {
+    res.status(statusCode).json({ success: false, error: error.message });
+    return;
+  }
+
   res.status(statusCode).json({ success: false, message });
 }

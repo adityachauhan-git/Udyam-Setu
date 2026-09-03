@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 import { pool } from "../../common/config/db.js";
 import { AppError } from "../../common/errors/AppError.js";
 
@@ -10,18 +11,91 @@ const defaultQuestions = [
   "What would help me generate income fastest?",
 ];
 
+const GROQ_MODEL = "openai/gpt-oss-120b";
+const GROQ_MAX_ATTEMPTS = 3;
+const GROQ_REQUEST_TIMEOUT_MS = 8000;
+const GROQ_RETRY_DELAYS_MS = [250, 500];
+const FALLBACK_ERROR_MESSAGE = "AI service temporarily unavailable";
+
+class ProviderError extends Error {
+  constructor(provider, error, fallbackEligible = false) {
+    super(`${provider} provider request failed`);
+    this.name = "ProviderError";
+    this.provider = provider;
+    this.cause = error;
+    this.fallbackEligible = fallbackEligible;
+  }
+}
+
+function getErrorStatus(error) {
+  const status = Number(error?.status ?? error?.statusCode ?? error?.response?.status);
+  return Number.isInteger(status) ? status : null;
+}
+
+function isTemporaryProviderError(error) {
+  const status = getErrorStatus(error);
+  if ([408, 429, 500, 502, 503, 504].includes(status)) return true;
+  if (status !== null) return false;
+
+  return [
+    "ECONNABORTED",
+    "ECONNRESET",
+    "ECONNREFUSED",
+    "ETIMEDOUT",
+    "EAI_AGAIN",
+    "ENETUNREACH",
+    "UND_ERR_CONNECT_TIMEOUT",
+    "UND_ERR_SOCKET",
+  ].includes(error?.code)
+    || [
+      "AbortError",
+      "FetchError",
+      "TimeoutError",
+      "APIConnectionError",
+      "APIConnectionTimeoutError",
+    ].includes(error?.name);
+}
+
+function logProviderError(provider, error, attempt) {
+  console.error(`[${provider}] AI request failed`, {
+    attempt,
+    status: getErrorStatus(error),
+    code: error?.code,
+    message: error?.message || "Unknown provider error",
+  });
+}
+
+function getRequiredApiKey(name) {
+  const apiKey = process.env[name];
+  if (!apiKey) {
+    throw new ProviderError(name === "GROQ_API_KEY" ? "groq" : "gemini", new Error(`${name} is not configured`));
+  }
+  return apiKey;
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function withTimeout(promise, milliseconds) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      const timeoutError = new Error("Gemini request timed out");
+      timeoutError.code = "ETIMEDOUT";
+      reject(timeoutError);
+    }, milliseconds);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
+}
+
 function getGeminiModelName() {
   return process.env.GEMINI_MODEL || "gemini-3.6-flash";
 }
 
 function getGeminiApiKey() {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-
-  if (!apiKey) {
-    throw new AppError("GEMINI_API_KEY is not configured", 500);
-  }
-
-  return apiKey;
+  return getRequiredApiKey("GEMINI_API_KEY");
 }
 
 function normalizeHistoryEntry(entry) {
@@ -190,6 +264,75 @@ function buildOnboardingContext(profile = {}, nearbyBusinesses = []) {
     : null;
 }
 
+function buildGroqMessages(contents) {
+  return contents.map((entry) => ({
+    role: entry.role === "model" ? "assistant" : entry.role,
+    content: entry.parts.map((part) => part.text).join("\n"),
+  }));
+}
+
+async function generateWithGroq(messages) {
+  const groq = new Groq({
+    apiKey: getRequiredApiKey("GROQ_API_KEY"),
+    timeout: GROQ_REQUEST_TIMEOUT_MS,
+  });
+
+  for (let attempt = 1; attempt <= GROQ_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await groq.chat.completions.create({
+        model: GROQ_MODEL,
+        messages,
+      });
+
+      return {
+        reply: response?.choices?.[0]?.message?.content || "No response generated",
+        model: GROQ_MODEL,
+        provider: "groq",
+        fallbackUsed: false,
+      };
+    } catch (error) {
+      const temporary = isTemporaryProviderError(error);
+      logProviderError("groq", error, attempt);
+
+      if (!temporary || attempt === GROQ_MAX_ATTEMPTS) {
+        throw new ProviderError("groq", error, temporary);
+      }
+
+      await wait(GROQ_RETRY_DELAYS_MS[attempt - 1]);
+    }
+  }
+
+  throw new ProviderError("groq", new Error("Groq retry limit reached"), true);
+}
+
+async function generateWithGemini(contents) {
+  let apiKey;
+  try {
+    apiKey = getGeminiApiKey();
+  } catch (error) {
+    throw error;
+  }
+
+  const modelName = getGeminiModelName();
+  const ai = new GoogleGenAI({ apiKey });
+
+  try {
+    const response = await withTimeout(
+      ai.models.generateContent({ model: modelName, contents }),
+      GROQ_REQUEST_TIMEOUT_MS,
+    );
+
+    return {
+      reply: response?.text || "No response generated",
+      model: modelName,
+      provider: "gemini",
+    };
+  } catch (error) {
+    logProviderError("gemini", error, 1);
+    throw new ProviderError("gemini", error, false);
+  }
+}
+
 export async function sendChatMessage({ message, history = [], userId, profile = {} }) {
   if (typeof message !== "string" || !message.trim()) {
     throw new AppError("Message is required", 400);
@@ -199,8 +342,6 @@ export async function sendChatMessage({ message, history = [], userId, profile =
     throw new AppError("History must be an array", 400);
   }
 
-  const modelName = getGeminiModelName();
-  const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
   const nearbyBusinesses = await getNearbyPopularBusinesses(profile?.village_id ?? profile?.villageId);
   const onboardingContext = buildOnboardingContext(profile, nearbyBusinesses);
 
@@ -220,25 +361,23 @@ export async function sendChatMessage({ message, history = [], userId, profile =
     { role: "user", parts: [{ text: message.trim() }] },
   );
 
-  console.log("[Gemini prompt payload]", JSON.stringify({ model: modelName, contents }, null, 2));
-
   try {
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents,
-    });
-
-    return {
-      reply: response?.text || "No response generated",
-      model: modelName,
-      userId,
-    };
-  } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
+    const result = await generateWithGroq(buildGroqMessages(contents));
+    return { ...result, userId };
+  } catch (groqError) {
+    if (!(groqError instanceof ProviderError) || !groqError.fallbackEligible) {
+      throw new AppError("AI provider configuration error", 500);
     }
 
-    const details = error?.message || "Gemini request failed";
-    throw new AppError(`Gemini request failed: ${details}`, 502);
+    try {
+      const result = await generateWithGemini(contents);
+      return { ...result, userId, fallbackUsed: true };
+    } catch (geminiError) {
+      console.error("[ai] Both providers are unavailable", {
+        groq: groqError.cause?.message || "Unknown Groq error",
+        gemini: geminiError.cause?.message || "Unknown Gemini error",
+      });
+      throw new AppError(FALLBACK_ERROR_MESSAGE, 503);
+    }
   }
 }

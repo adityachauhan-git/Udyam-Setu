@@ -1,3 +1,6 @@
 node_modules/
+.gitignore
+SIH_TEAM_GUIDE.md
+SIH_TEAM_GUIDE.docx
 .env
 *.log
