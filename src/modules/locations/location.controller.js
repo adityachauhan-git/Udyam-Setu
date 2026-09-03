@@ -1,13 +1,23 @@
 import { getDistricts, getStates, getVillages } from "./location.service.js";
+import { logger } from "../../common/utils/logger.js";
 
 export async function listStates(req, res) {
-  res.json({ success: true, data: { states: await getStates() } });
+  logger.info("controller.locations.states", { requestId: req.requestId });
+  const states = await getStates();
+  logger.debug("controller.locations.states.response", { requestId: req.requestId, count: states.length });
+  res.json({ success: true, data: { states } });
 }
 
 export async function listDistricts(req, res) {
-  res.json({ success: true, data: { districts: await getDistricts(req.query.stateId) } });
+  logger.info("controller.locations.districts", { requestId: req.requestId, stateId: req.query.stateId });
+  const districts = await getDistricts(req.query.stateId);
+  logger.debug("controller.locations.districts.response", { requestId: req.requestId, count: districts.length });
+  res.json({ success: true, data: { districts } });
 }
 
 export async function listVillages(req, res) {
-  res.json({ success: true, data: { villages: await getVillages(req.query.districtId) } });
+  logger.info("controller.locations.villages", { requestId: req.requestId, districtId: req.query.districtId });
+  const villages = await getVillages(req.query.districtId);
+  logger.debug("controller.locations.villages.response", { requestId: req.requestId, count: villages.length });
+  res.json({ success: true, data: { villages } });
 }
