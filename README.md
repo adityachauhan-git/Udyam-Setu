@@ -1,6 +1,6 @@
 # AI Business Consulting Backend
 
-A Node.js Express backend for a business advisory platform that combines onboarding data with Gemini-powered chat recommendations.
+A Node.js Express backend for a business advisory platform that combines onboarding data with AI-powered chat recommendations. Chat uses Groq as the primary provider and falls back to Google Gemini when Groq has a temporary failure.
 
 ## Setup
 
@@ -14,14 +14,26 @@ Create a `.env` file with:
 
 - `DATABASE_URL` - PostgreSQL connection string
 - `JWT_SECRET` - secret key for auth tokens
-- `GEMINI_API_KEY` or `GOOGLE_API_KEY` - Google Gemini API key
-- `GEMINI_MODEL` - optional Gemini model name, default is `gemini-3.6-flash`
+- `GROQ_API_KEY` - Groq API key for the primary chat provider
+- `GEMINI_API_KEY` - Google Gemini API key used as the fallback provider
+- `GEMINI_MODEL` - optional Gemini fallback model; default is `gemini-3.6-flash`
+- `PORT` - optional server port; default is `5000`
+- `JWT_EXPIRES_IN` - optional JWT lifetime; default is `7d`
+- `LOG_LEVEL` - optional logging level
 
-Run the SQL scripts in this order:
+For a new database, run the complete setup script:
+
+```bash
+psql "$DATABASE_URL" -f full_database_setup.sql
+```
+
+For an existing database, run the SQL scripts in this order:
 
 1. `database.sql` - base schema, location tables, and sample Indian locations
 2. `onboarding_migration.sql` - onboarding profile tables
-3. `village_cluster_migration.sql` - any additional location aggregation data if required
+3. `village_cluster_migration.sql` - nearby-village and shared-business data
+
+Do not run both setup paths unnecessarily. `full_database_setup.sql` already includes the base schema, onboarding tables, clustering fields, and seed data.
 
 ## Features
 
@@ -47,7 +59,7 @@ This profile is saved separately from authentication and supports partial update
 
 ### AI Chat and Recommendations
 
-The chat module uses the onboarding profile as context for Gemini so responses can be more relevant to the user’s background, location, skills, goals, and resources.
+The chat module uses the onboarding profile and nearby-business data as context so responses can be more relevant to the user’s background, location, skills, goals, and resources. Requests are sent to Groq first and retried for temporary failures. Gemini is used as a fallback when Groq remains temporarily unavailable.
 
 The chat request includes a natural-language onboarding summary such as:
 
@@ -57,8 +69,10 @@ The chat request includes a natural-language onboarding summary such as:
 - location (village, district, state)
 - land and capital context
 - income targets
+- resources such as electricity, internet, water, storage, transport, and equipment
+- popular businesses within 10 km
 
-This is sent before the live conversation so Gemini can tailor business suggestions without repeatedly asking for data already collected.
+This context is sent before the live conversation so the AI can tailor business suggestions without repeatedly asking for data already collected. The nearby-business query requires PostGIS and uses a 10 km radius.
 
 ## API
 
@@ -68,9 +82,11 @@ This is sent before the live conversation so Gemini can tailor business suggesti
 
 ### Auth
 
-- `POST /api/auth/register` with `{ "name", "email", "password", "villageId" }`
+- `POST /api/auth/register` with `{ "name", "email", "password" }`
 - `POST /api/auth/login` with `{ "email", "password" }`
 - `GET /api/auth/me` with `Authorization: Bearer <token>`
+
+Registration creates the account first. The selected village is saved later through onboarding.
 
 ### Locations
 
@@ -95,7 +111,9 @@ This is sent before the live conversation so Gemini can tailor business suggesti
 }
 ```
 
-The chat service sends the onboarding profile and recent chat history to Gemini together, and returns the AI response plus the active model name.
+The response includes the AI reply, provider, active model name, and whether the Gemini fallback was used.
+
+The public browser chat page is available at `GET /chat` after login.
 
 ## Architecture
 
@@ -113,6 +131,6 @@ Controllers handle HTTP request/response concerns, services contain business log
 
 ## Notes
 
-The frontend loads dependent state, district, and village selectors during onboarding. Registration creates the account first; the selected village is then stored in the onboarding profile and linked to the location tables.
+The frontend loads dependent state, district, and village selectors during onboarding. The form supports partial saves; completing onboarding requires a village and preferred language.
 
-For a production deployment, replace the sample dummy locations with a verified local dataset before using live business recommendations.
+For a production deployment, replace the sample dummy locations with a verified local dataset before using live business recommendations. The nearby-business feature requires PostGIS.

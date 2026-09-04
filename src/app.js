@@ -8,6 +8,7 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import chatRoutes from "./modules/chat/chat.routes.js";
 import locationRoutes from "./modules/locations/location.routes.js";
 import onboardingRoutes from "./modules/onboarding/onboarding.routes.js";
+import financialRoutes from "./modules/financial/financial.routes.js";
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -30,6 +31,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/onboarding", onboardingRoutes);
+app.use("/api/schemes", financialRoutes);
 app.use(errorMiddleware);
 
 export default app;
