@@ -24,16 +24,18 @@ Create a `.env` file with:
 For a new database, run the complete setup script:
 
 ```bash
-psql "$DATABASE_URL" -f full_database_setup.sql
+psql "$DATABASE_URL" -f database/full_setup.sql
 ```
 
 For an existing database, run the SQL scripts in this order:
 
-1. `database.sql` - base schema, location tables, and sample Indian locations
-2. `onboarding_migration.sql` - onboarding profile tables
-3. `village_cluster_migration.sql` - nearby-village and shared-business data
+1. `database/migrations/001_initial_schema.sql` - base schema, location tables, and sample Indian locations
+2. `database/migrations/002_add_onboarding_profiles.sql` - onboarding profile tables
+3. `database/migrations/003_add_village_cluster_data.sql` - nearby-village and shared-business data
+4. `database/migrations/004_add_gis_market_data.sql` - GIS market-data tables and indexes
+5. `database/seed/gis_market_data.sql` - optional repeatable GIS demonstration data
 
-Do not run both setup paths unnecessarily. `full_database_setup.sql` already includes the base schema, onboarding tables, clustering fields, and seed data.
+Do not run both setup paths unnecessarily. `database/full_setup.sql` includes the final schema, base location data, onboarding, clustering fields, and GIS market-data tables.
 
 ## Features
 

@@ -1,4 +1,4 @@
--- Run database.sql first, then run this migration in Supabase.
+-- Run 001_initial_schema.sql first, then run this migration.
 -- This migration preserves existing users and creates one onboarding row per user.
 
 ALTER TABLE users
