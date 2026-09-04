@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>UdyamSetyu | AI Dashboard</title>
+    <title>Udyam Setu | AI Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -16,7 +16,7 @@
           <div class="brand-block">
             <div class="brand-mark">U</div>
             <div>
-              <p class="eyebrow">UdyamSetyu</p>
+              <p class="eyebrow">Udyam Setu</p>
               <h2>Workspace</h2>
             </div>
           </div>
@@ -25,6 +25,7 @@
 
         <nav class="sidebar-nav" aria-label="Dashboard sections">
           <button class="nav-toggle active" type="button" data-section="coach">AI coach</button>
+          <button class="nav-toggle" type="button" data-section="funding">Funding</button>
           <button class="nav-toggle" type="button" data-section="opportunities">Opportunities</button>
           <button class="nav-toggle" type="button" data-section="plan">Plan</button>
           <button class="nav-toggle" type="button" data-section="profile">Profile</button>
@@ -57,10 +58,10 @@
           <button id="new-chat" class="primary-button small-button" type="button">New chat</button>
         </header>
 
-        <section class="workspace-grid">
+        <section id="coach-section" class="workspace-grid workspace-section">
           <div class="chat-column">
             <div class="chat-messages" id="chat-messages" aria-live="polite">
-              <div class="chat-empty">Ask UdyamSetyu for business ideas, strategy, or next steps.</div>
+              <div class="chat-empty">Ask Udyam Setu for business ideas, strategy, or next steps.</div>
             </div>
 
             <form id="chat-form" class="chat-form" novalidate>
@@ -78,6 +79,42 @@
                 <button class="primary-button" type="submit">Send</button>
               </div>
             </form>
+          </div>
+        </section>
+
+        <section id="funding-section" class="workspace-section funding-section is-hidden" aria-labelledby="funding-title">
+          <div class="funding-hero">
+            <p class="eyebrow">Finance planner</p>
+            <h1 id="funding-title">See a clear path to repayment.</h1>
+            <p>Enter your margin capital to check the available scheme and view its quarterly repayment plan.</p>
+          </div>
+
+          <form id="funding-form" class="funding-form" novalidate>
+            <label for="margin-capital">Your margin capital <span>(₹)</span></label>
+            <div class="funding-input-row">
+              <input id="margin-capital" name="marginCapital" type="number" min="1" step="any" placeholder="e.g. 10000" required />
+              <button class="primary-button small-button" type="submit">Check eligibility</button>
+            </div>
+            <p id="funding-status" class="funding-status" role="status"></p>
+          </form>
+
+          <div id="funding-results" class="funding-results is-hidden" aria-live="polite">
+            <div id="funding-summary" class="funding-summary"></div>
+            <div class="schedule-card">
+              <div class="schedule-heading">
+                <div>
+                  <p class="eyebrow">Payment timeline</p>
+                  <h2>Quarterly repayment schedule</h2>
+                </div>
+                <span id="schedule-count" class="schedule-count"></span>
+              </div>
+              <div class="schedule-table-wrap">
+                <table class="schedule-table">
+                  <thead><tr><th>Quarter</th><th>Status</th><th>Installment</th><th>Balance remaining</th></tr></thead>
+                  <tbody id="repayment-schedule"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
       </main>
