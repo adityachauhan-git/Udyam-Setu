@@ -10,12 +10,6 @@ const profileSummary = document.querySelector("#profile-summary");
 const logoutButton = document.querySelector("#logout-button");
 const newChatButton = document.querySelector("#new-chat");
 const sidebarToggles = document.querySelectorAll(".sidebar-toggle, .floating-sidebar-toggle");
-const fundingForm = document.querySelector("#funding-form");
-const fundingStatus = document.querySelector("#funding-status");
-const fundingResults = document.querySelector("#funding-results");
-const fundingSummary = document.querySelector("#funding-summary");
-const repaymentSchedule = document.querySelector("#repayment-schedule");
-const scheduleCount = document.querySelector("#schedule-count");
 let chatHistory = [];
 
 async function request(path, requestOptions = {}) {
@@ -164,64 +158,6 @@ function getSuggestionLabel(question = "") {
   return text.length > 52 ? `${text.slice(0, 49).trim()}…` : text;
 }
 
-function formatCurrency(value) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 2,
-  }).format(Number(value) || 0);
-}
-
-function renderFundingResult(data) {
-  if (!fundingResults || !fundingSummary || !repaymentSchedule || !scheduleCount) return;
-
-  if (!data.eligible) {
-    fundingResults.classList.remove("is-hidden");
-    fundingSummary.innerHTML = `<div class="funding-empty"><h2>We could not find a matching scheme</h2><p>Your project cost is above the supported scheme range. Try a lower margin capital or speak with a funding advisor.</p></div>`;
-    repaymentSchedule.innerHTML = "";
-    scheduleCount.textContent = "";
-    return;
-  }
-
-  const cards = [
-    ["Eligible scheme", data.scheme.name],
-    ["Project cost", formatCurrency(data.projectCost)],
-    ["Available loan", formatCurrency(data.loanAmount)],
-    ["Quarterly installment", formatCurrency(data.quarterlyInstallment)],
-  ];
-  fundingSummary.innerHTML = cards.map(([label, value], index) => `<article class="funding-stat ${index === 2 ? "funding-stat-accent" : ""}"><span>${label}</span><strong>${value}</strong></article>`).join("");
-  repaymentSchedule.innerHTML = data.repaymentSchedule.map((entry) => `<tr><td>Q${entry.quarterNumber}</td><td><span class="schedule-status ${entry.status === "Moratorium" ? "is-moratorium" : ""}">${entry.status}</span></td><td>${formatCurrency(entry.installmentAmount)}</td><td>${formatCurrency(entry.remainingLoanBalance)}</td></tr>`).join("");
-  scheduleCount.textContent = `${data.tenureYears} years · ${data.moratoriumMonths} month moratorium`;
-  fundingResults.classList.remove("is-hidden");
-}
-
-async function submitFundingCheck() {
-  if (!fundingForm || !fundingStatus) return;
-  const formData = new FormData(fundingForm);
-  const marginCapital = Number(formData.get("marginCapital"));
-  if (!Number.isFinite(marginCapital) || marginCapital <= 0) {
-    fundingStatus.textContent = "Enter a margin capital amount greater than zero.";
-    fundingStatus.dataset.kind = "error";
-    return;
-  }
-
-  fundingStatus.textContent = "Checking your eligibility…";
-  fundingStatus.dataset.kind = "";
-  try {
-    const result = await request("/api/schemes/eligibility", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${localStorage.getItem(tokenKey)}` },
-      body: JSON.stringify({ marginCapital }),
-    });
-    renderFundingResult(result.data);
-    fundingStatus.textContent = result.data.eligible ? "Your repayment plan is ready." : "No eligible scheme was found.";
-    fundingStatus.dataset.kind = result.data.eligible ? "success" : "error";
-  } catch (error) {
-    fundingStatus.textContent = error.message;
-    fundingStatus.dataset.kind = "error";
-  }
-}
-
 function normalizeSuggestionOption(question) {
   if (typeof question === "string") {
     const value = question.trim();
@@ -350,22 +286,6 @@ newChatButton?.addEventListener("click", () => {
   loadChatRecommendations().catch(() => {});
 });
 
-document.querySelectorAll(".nav-toggle").forEach((button) => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".nav-toggle").forEach((item) => item.classList.toggle("active", item === button));
-    const section = button.dataset.section;
-    const isFunding = section === "funding";
-    document.querySelector("#coach-section").classList.toggle("is-hidden", isFunding);
-    document.querySelector("#funding-section").classList.toggle("is-hidden", !isFunding);
-    document.querySelector(".topbar-kicker").textContent = isFunding ? "Funding" : "AI Coach";
-    newChatButton.classList.toggle("is-hidden", isFunding);
-  });
-});
-
-fundingForm?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  submitFundingCheck();
-});
 
 sidebarToggles.forEach((toggle) => {
   toggle.addEventListener("click", () => {
