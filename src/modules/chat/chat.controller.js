@@ -7,6 +7,8 @@ export async function sendMessage(req, res) {
   logger.info("controller.chat.send", { requestId: req.requestId, userId: req.user.id, messageLength: typeof message === "string" ? message.length : 0, historyLength: Array.isArray(history) ? history.length : 0 });
   const profile = await getOnboarding(req.user.id);
 
+  console.log("profile", profile);
+
   const data = await sendChatMessage({
     message,
     history,

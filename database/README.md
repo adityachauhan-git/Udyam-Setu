@@ -8,6 +8,10 @@ does not remove or rewrite existing data.
 `seed/gis_market_data.sql` supplies repeatable demonstration records. Run it
 only after the GIS migration and after the existing location seed data.
 
+`seed/uttarakhand_market_data.sql` is the larger Uttarakhand hackathon-demo
+dataset. It covers every Uttarakhand village seeded by migration 003 with 12
+businesses, 24 products, 18 observations, 12 risks, and 12 channels.
+
 `migrations/005_retire_legacy_village_market_arrays.sql` removes the former
 `villages` proximity and business-label arrays. Apply it only after deploying
 the GIS-backed chat service; it must run after migration 004.

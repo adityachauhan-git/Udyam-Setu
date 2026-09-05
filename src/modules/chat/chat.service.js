@@ -343,6 +343,27 @@ async function generateWithGemini(contents) {
   }
 }
 
+export async function generateWithAi(contents) {
+  try {
+    return await generateWithGroq(buildGroqMessages(contents));
+  } catch (groqError) {
+    if (!(groqError instanceof ProviderError) || !groqError.fallbackEligible) {
+      throw new AppError("AI provider configuration error", 500);
+    }
+
+    try {
+      const result = await generateWithGemini(contents);
+      return { ...result, fallbackUsed: true };
+    } catch (geminiError) {
+      console.error("[ai] Both providers are unavailable", {
+        groq: groqError.cause?.message || "Unknown Groq error",
+        gemini: geminiError.cause?.message || "Unknown Gemini error",
+      });
+      throw new AppError(FALLBACK_ERROR_MESSAGE, 503);
+    }
+  }
+}
+
 export async function sendChatMessage({ message, history = [], userId, profile = {} }) {
   if (typeof message !== "string" || !message.trim()) {
     throw new AppError("Message is required", 400);
@@ -353,6 +374,9 @@ export async function sendChatMessage({ message, history = [], userId, profile =
   }
 
   const marketData = await getNearbyMarketSummary(profile?.village_id ?? profile?.villageId);
+
+  console.log("marketData", marketData);
+
   const onboardingContext = buildOnboardingContext(profile, marketData);
 
   const contents = [];
@@ -371,23 +395,6 @@ export async function sendChatMessage({ message, history = [], userId, profile =
     { role: "user", parts: [{ text: message.trim() }] },
   );
 
-  try {
-    const result = await generateWithGroq(buildGroqMessages(contents));
-    return { ...result, userId };
-  } catch (groqError) {
-    if (!(groqError instanceof ProviderError) || !groqError.fallbackEligible) {
-      throw new AppError("AI provider configuration error", 500);
-    }
-
-    try {
-      const result = await generateWithGemini(contents);
-      return { ...result, userId, fallbackUsed: true };
-    } catch (geminiError) {
-      console.error("[ai] Both providers are unavailable", {
-        groq: groqError.cause?.message || "Unknown Groq error",
-        gemini: geminiError.cause?.message || "Unknown Gemini error",
-      });
-      throw new AppError(FALLBACK_ERROR_MESSAGE, 503);
-    }
-  }
+  const result = await generateWithAi(contents);
+  return { ...result, userId };
 }
