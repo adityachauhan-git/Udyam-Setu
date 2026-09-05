@@ -1,4 +1,4 @@
-import { getDistricts, getStates, getVillages } from "./location.service.js";
+import { getCompetitionMap, getDistricts, getStates, getVillages } from "./location.service.js";
 import { logger } from "../../common/utils/logger.js";
 
 export async function listStates(req, res) {
@@ -20,4 +20,11 @@ export async function listVillages(req, res) {
   const villages = await getVillages(req.query.districtId);
   logger.debug("controller.locations.villages.response", { requestId: req.requestId, count: villages.length });
   res.json({ success: true, data: { villages } });
+}
+
+export async function getCompetitionMapData(req, res) {
+  logger.info("controller.locations.competitionMap", { requestId: req.requestId, userId: req.user.id, businessCategory: req.query.businessCategory });
+  const map = await getCompetitionMap(req.user.id, req.query.businessCategory);
+  logger.debug("controller.locations.competitionMap.response", { requestId: req.requestId, userId: req.user.id, count: map.businesses.length });
+  res.json({ success: true, data: map });
 }

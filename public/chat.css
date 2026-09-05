@@ -556,6 +556,13 @@ body.sidebar-collapsed .floating-sidebar-toggle {
 .report-status { color: var(--muted); font-size: 0.82rem; margin: 0.7rem 0 0; min-height: 1.1rem; }
 .report-status[data-kind="error"] { color: var(--error); }
 .report-status[data-kind="success"] { color: var(--success); }
+.competition-map-panel { background: rgba(255,255,255,0.86); border: 1px solid rgba(16,42,67,0.09); border-radius: 1.1rem; box-shadow: 0 12px 30px rgba(16,42,67,0.05); margin-top: 1rem; padding: 1.1rem; }
+.competition-map-heading { align-items: flex-start; display: flex; gap: 1rem; justify-content: space-between; }
+.competition-map-heading .eyebrow { margin-bottom: 0.35rem; }
+.competition-map-heading h2 { color: var(--primary); font-family: "Space Grotesk", sans-serif; font-size: 1.25rem; margin: 0; }
+.competition-map { border-radius: 0.8rem; height: min(52vh, 30rem); min-height: 20rem; overflow: hidden; }
+.competition-map .leaflet-popup-content { line-height: 1.5; margin: 0.75rem 1rem; }
+.competition-map .leaflet-popup-content strong { color: var(--primary); display: block; margin-bottom: 0.2rem; }
 .report-results { display: grid; gap: 1rem; margin-top: 1rem; }
 .report-meta { align-items: center; color: var(--muted); display: flex; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
 .report-meta span { background: rgba(215,242,108,0.45); border-radius: 99px; color: var(--primary); padding: 0.48rem 0.7rem; }
@@ -645,6 +652,7 @@ body.sidebar-collapsed .dashboard-shell {
   .funding-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .schedule-heading { flex-direction: column; }
   .report-input-row { flex-direction: column; }
+  .competition-map-heading { flex-direction: column; }
   .report-content, .swot-grid { grid-template-columns: 1fr; }
   .report-card:first-child, .report-card:nth-child(3), .report-card:last-child { grid-column: auto; }
 }

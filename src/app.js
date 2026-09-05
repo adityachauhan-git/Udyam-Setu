@@ -32,6 +32,10 @@ app.get("/feasibility", (req, res) => {
   res.sendFile(path.join(publicDirectory, "feasibility.html"));
 });
 
+app.get("/competition-map", (req, res) => {
+  res.sendFile(path.join(publicDirectory, "competition-map.html"));
+});
+
 app.get("/api/health", (req, res) => {
   res.json({ success: true, message: "Server is running" });
 });

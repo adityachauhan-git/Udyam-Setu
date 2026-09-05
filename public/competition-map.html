@@ -3,10 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Udyam Setu | Feasibility report</title>
+    <title>Udyam Setu | Competition map</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="/chat.css" />
   </head>
   <body class="chat-dashboard-body">
@@ -19,8 +20,8 @@
         <nav class="sidebar-nav" aria-label="Dashboard sections">
           <a class="nav-toggle" href="/chat">AI coach</a>
           <a class="nav-toggle" href="/financial.html">Funding</a>
-          <a class="nav-toggle" href="/competition-map">Competition map</a>
-          <a class="nav-toggle active" href="/feasibility.html">Feasibility report</a>
+          <a class="nav-toggle active" href="/competition-map">Competition map</a>
+          <a class="nav-toggle" href="/feasibility.html">Feasibility report</a>
         </nav>
         <div class="sidebar-profile">
           <div class="sidebar-user"><div class="avatar" id="user-avatar">U</div><div><strong id="user-name">User</strong><span>Business builder</span></div></div>
@@ -31,31 +32,38 @@
 
       <main class="main-panel">
         <button id="sidebar-toggle-floating" class="floating-sidebar-toggle" type="button" aria-label="Toggle sidebar">☰</button>
-        <header class="topbar"><div class="topbar-title-wrap"><span class="topbar-kicker">Feasibility report</span></div></header>
-        <section class="report-section" aria-labelledby="report-title">
+        <header class="topbar"><div class="topbar-title-wrap"><span class="topbar-kicker">Competition map</span></div></header>
+        <section class="report-section" aria-labelledby="competition-map-title">
           <div class="report-hero">
-            <p class="eyebrow">Local market intelligence</p>
-            <h1 id="report-title">Test your business idea against local signals.</h1>
-            <p>Get an AI-assisted report using nearby businesses, pricing, market observations, risks, and distribution channels within 10 km of your selected village.</p>
+            <p class="eyebrow">Local competition</p>
+            <h1 id="competition-map-title">Businesses around your village.</h1>
+            <p>Explore businesses from the local market database within 10 km of your selected village.</p>
           </div>
 
-          <form id="report-form" class="report-form" novalidate>
-            <label for="business-category">Business category</label>
+          <form id="competition-map-form" class="report-form" novalidate>
+            <label for="business-category">Filter by business category</label>
             <div class="report-input-row">
-              <input id="business-category" name="businessCategory" type="text" list="business-category-options" placeholder="e.g. dairy, horticulture, transport" required />
+              <input id="business-category" name="businessCategory" type="text" list="business-category-options" placeholder="e.g. dairy, horticulture, transport" />
               <datalist id="business-category-options"><option value="dairy"></option><option value="horticulture"></option><option value="agri"></option><option value="transport"></option><option value="handicraft"></option><option value="retail"></option></datalist>
-              <button class="primary-button small-button" type="submit">Generate report</button>
+              <button class="primary-button small-button" type="submit">Update map</button>
             </div>
-            <p id="report-status" class="report-status" role="status"></p>
+            <p id="competition-map-status" class="report-status" role="status">Loading your village map.</p>
           </form>
 
-          <div id="report-results" class="report-results is-hidden" aria-live="polite">
-            <div id="report-meta" class="report-meta"></div>
-            <div id="report-content" class="report-content"></div>
-          </div>
+          <section class="competition-map-panel" aria-label="Nearby business map">
+            <div class="competition-map-heading">
+              <div>
+                <p class="eyebrow">Map view</p>
+                <h2 id="competition-map-location">10 km around your village</h2>
+              </div>
+              <span id="competition-map-count" class="report-meta">10 km radius</span>
+            </div>
+            <div id="competition-map" class="competition-map" aria-label="Interactive map of nearby businesses"></div>
+          </section>
         </section>
       </main>
     </div>
-    <script src="/feasibility.js" type="module"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/competition-map.js" type="module"></script>
   </body>
 </html>
