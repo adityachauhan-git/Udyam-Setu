@@ -8,6 +8,10 @@ does not remove or rewrite existing data.
 `seed/gis_market_data.sql` supplies repeatable demonstration records. Run it
 only after the GIS migration and after the existing location seed data.
 
+`migrations/005_retire_legacy_village_market_arrays.sql` removes the former
+`villages` proximity and business-label arrays. Apply it only after deploying
+the GIS-backed chat service; it must run after migration 004.
+
 `full_setup.sql` is the clean, self-contained setup for a new database. It
 includes the final schema and the current project seed locations.
 
@@ -17,10 +21,9 @@ database.
 
 ## Compatibility decisions
 
-- `villages.shared_popular_businesses` and `villages.nearby_village_ids` are
-  retained. The current chat implementation reads `shared_popular_businesses`
-  and uses live `ST_DWithin` queries, so removing either column would break
-  compatibility or discard useful legacy data.
+- The former `villages.shared_popular_businesses` and
+  `villages.nearby_village_ids` columns are retired in migration 005. The chat
+  service now reads reusable GIS market facts through PostGIS radius queries.
 - The final setup accepts the plain capital and income range values emitted by
   `src/modules/onboarding/onboarding.service.js`: `0-25k`, `25k-1L`, `1-5L`,
   `5L+`; and `5k-10k`, `10k-25k`, `25k-50k`, `50k+`. This matches the separate

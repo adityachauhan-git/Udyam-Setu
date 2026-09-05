@@ -33,9 +33,10 @@ For an existing database, run the SQL scripts in this order:
 2. `database/migrations/002_add_onboarding_profiles.sql` - onboarding profile tables
 3. `database/migrations/003_add_village_cluster_data.sql` - nearby-village and shared-business data
 4. `database/migrations/004_add_gis_market_data.sql` - GIS market-data tables and indexes
-5. `database/seed/gis_market_data.sql` - optional repeatable GIS demonstration data
+5. `database/migrations/005_retire_legacy_village_market_arrays.sql` - remove obsolete village arrays after the GIS-backed backend is deployed
+6. `database/seed/gis_market_data.sql` - optional repeatable GIS demonstration data
 
-Do not run both setup paths unnecessarily. `database/full_setup.sql` includes the final schema, base location data, onboarding, clustering fields, and GIS market-data tables.
+Do not run both setup paths unnecessarily. `database/full_setup.sql` includes the final schema, base location data, onboarding, and GIS market-data tables.
 
 ## Features
 

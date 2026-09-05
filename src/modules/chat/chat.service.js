@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import Groq from "groq-sdk";
-import { pool } from "../../common/config/db.js";
 import { AppError } from "../../common/errors/AppError.js";
+import { findNearbyMarketData } from "./market.repository.js";
 
 const defaultQuestions = [
   "What kind of business idea fits my skills best?",
@@ -173,7 +173,7 @@ export async function getRecommendedQuestions(profile) {
   return buildRecommendedQuestions(profile ?? {});
 }
 
-function formatBusinessName(value) {
+function formatLabel(value) {
   return String(value)
     .replace(/_/g, " ")
     .replace(/\s+/g, " ")
@@ -181,37 +181,43 @@ function formatBusinessName(value) {
     .replace(/\b\w/g, (str) => str.toUpperCase());
 }
 
-async function getNearbyPopularBusinesses(villageId) {
-  if (!villageId) return [];
+function emptyMarketSummary() {
+  return { businesses: [], products: [], observations: [], risks: [], channels: [] };
+}
+
+function summarizeNearbyMarketData(marketData) {
+  const businesses = new Map();
+
+  marketData.businesses.forEach((row) => {
+    if (!businesses.has(row.id)) {
+      businesses.set(row.id, { name: row.name, type: row.business_type, products: [] });
+    }
+    if (row.product_name) {
+      businesses.get(row.id).products.push(`${row.product_name}: ${row.price} per ${row.unit}`);
+    }
+  });
+
+  return {
+    businesses: [...businesses.values()].map((business) => `${business.name} (${formatLabel(business.type)})`),
+    products: [...businesses.values()].flatMap((business) => business.products.map((product) => `${business.name} — ${product}`)),
+    observations: marketData.observations.map((row) => `${formatLabel(row.observation_type)}: ${row.value} ${row.unit} (${row.source_label})`),
+    risks: marketData.risks.map((row) => `${formatLabel(row.severity)} ${formatLabel(row.risk_type)}: ${row.description}`),
+    channels: marketData.channels.map((row) => `${row.name} (${formatLabel(row.channel_type)})`),
+  };
+}
+
+async function getNearbyMarketSummary(villageId) {
+  if (!villageId) return emptyMarketSummary();
 
   try {
-    const result = await pool.query(
-      `SELECT DISTINCT business
-       FROM (
-         SELECT unnest(shared_popular_businesses) AS business
-         FROM villages
-         WHERE id = $1
-         UNION
-         SELECT unnest(v2.shared_popular_businesses) AS business
-         FROM villages v1
-         JOIN villages v2
-           ON v1.id != v2.id
-          AND v1.id = $1
-          AND ST_DWithin(v1.location::geography, v2.location::geography, 10000)
-       ) nearby
-       WHERE business IS NOT NULL AND business <> ''
-       ORDER BY business;`,
-      [villageId],
-    );
-
-    return result.rows.map((row) => formatBusinessName(row.business));
+    return summarizeNearbyMarketData(await findNearbyMarketData(villageId));
   } catch (error) {
-    console.warn("Failed to load nearby popular businesses:", error.message);
-    return [];
+    console.warn("Failed to load nearby GIS market data:", error.message);
+    return emptyMarketSummary();
   }
 }
 
-function buildOnboardingContext(profile = {}, nearbyBusinesses = []) {
+function buildOnboardingContext(profile = {}, marketData = emptyMarketSummary()) {
   if (!profile || typeof profile !== "object") {
     return null;
   }
@@ -251,7 +257,11 @@ function buildOnboardingContext(profile = {}, nearbyBusinesses = []) {
   addPart("Skills", skills);
   addPart("Interests", interests);
   addPart("Goals", goals);
-  addPart("Popular businesses within 10 km", nearbyBusinesses);
+  addPart("Nearby businesses within 10 km", marketData.businesses);
+  addPart("Nearby products and prices within 10 km", marketData.products);
+  addPart("Market observations within 10 km", marketData.observations);
+  addPart("Local risks within 10 km", marketData.risks);
+  addPart("Distribution channels within 10 km", marketData.channels);
   addPart("Electricity available", profile.electricity_available ?? profile.electricityAvailable);
   addPart("Internet available", profile.internet_available ?? profile.internetAvailable);
   addPart("Water available", profile.water_available ?? profile.waterAvailable);
@@ -260,7 +270,7 @@ function buildOnboardingContext(profile = {}, nearbyBusinesses = []) {
   addPart("Equipment available", profile.equipment_available ?? profile.equipmentAvailable);
 
   return profileParts.length > 0
-    ? `You are helping this user with business advice. Use the onboarding profile as background context for all responses and do not ask the user for information they already provided. Prioritize opportunities that are popular and practical near the user’s location within a 10 km radius. If nearby popular businesses are listed, treat them as strong local signals and prefer recommendations aligned with those local demand patterns. Profile summary: ${profileParts.join("; ")}.`
+    ? `You are helping this user with business advice. Use the onboarding profile as background context for all responses and do not ask the user for information they already provided. Prioritize opportunities that are practical near the user’s location within a 10 km radius. Treat nearby businesses, prices, market observations, risks, and distribution channels as local signals. Profile summary: ${profileParts.join("; ")}.`
     : null;
 }
 
@@ -342,8 +352,8 @@ export async function sendChatMessage({ message, history = [], userId, profile =
     throw new AppError("History must be an array", 400);
   }
 
-  const nearbyBusinesses = await getNearbyPopularBusinesses(profile?.village_id ?? profile?.villageId);
-  const onboardingContext = buildOnboardingContext(profile, nearbyBusinesses);
+  const marketData = await getNearbyMarketSummary(profile?.village_id ?? profile?.villageId);
+  const onboardingContext = buildOnboardingContext(profile, marketData);
 
   const contents = [];
 

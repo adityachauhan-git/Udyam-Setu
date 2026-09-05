@@ -25,8 +25,6 @@ CREATE TABLE villages (
     district_id UUID NOT NULL REFERENCES districts(id) ON DELETE CASCADE,
     name VARCHAR(150) NOT NULL,
     location geography(Point, 4326),
-    nearby_village_ids UUID[] DEFAULT '{}',
-    shared_popular_businesses TEXT[] DEFAULT '{}',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (district_id, name)
 );
@@ -123,8 +121,6 @@ CREATE TABLE distribution_channels (
 CREATE INDEX districts_state_id_idx ON districts(state_id);
 CREATE INDEX villages_district_id_idx ON villages(district_id);
 CREATE INDEX villages_location_idx ON villages USING GIST(location);
-CREATE INDEX villages_nearby_ids_idx ON villages USING GIN(nearby_village_ids);
-CREATE INDEX villages_businesses_idx ON villages USING GIN(shared_popular_businesses);
 CREATE INDEX onboarding_profiles_village_id_idx ON onboarding_profiles(village_id);
 CREATE INDEX onboarding_profiles_skills_idx ON onboarding_profiles USING GIN(skills);
 CREATE INDEX onboarding_profiles_interests_idx ON onboarding_profiles USING GIN(interests);
@@ -152,10 +148,6 @@ CREATE TRIGGER onboarding_profiles_updated_at
     BEFORE UPDATE ON onboarding_profiles
     FOR EACH ROW EXECUTE FUNCTION update_onboarding_profiles_updated_at();
 
-COMMENT ON COLUMN villages.shared_popular_businesses IS
-  'Legacy compatibility data used by the current chat service. Retain until chat reads GIS market-data tables.';
-COMMENT ON COLUMN villages.nearby_village_ids IS
-  'Legacy denormalized proximity cache. Current chat uses live PostGIS ST_DWithin queries instead.';
 
 INSERT INTO states (id, name) VALUES
   ('10000000-0000-0000-0000-000000000001', 'Maharashtra'),
@@ -190,15 +182,3 @@ INSERT INTO villages (id, district_id, name, location) VALUES
   ('30000000-0000-0000-0000-000000000018', '20000000-0000-0000-0000-000000000005', 'Herbertpur', ST_SetSRID(ST_MakePoint(78.0500, 30.2800), 4326)::geography),
   ('30000000-0000-0000-0000-000000000019', '20000000-0000-0000-0000-000000000005', 'Saharanpur Road', ST_SetSRID(ST_MakePoint(78.1800, 30.3500), 4326)::geography),
   ('30000000-0000-0000-0000-000000000020', '20000000-0000-0000-0000-000000000005', 'Vasantpur', ST_SetSRID(ST_MakePoint(78.0200, 30.1500), 4326)::geography);
-
-UPDATE villages v1
-SET nearby_village_ids = ARRAY(
-  SELECT v2.id FROM villages v2
-  WHERE v1.id != v2.id
-    AND v1.district_id = v2.district_id
-    AND ST_DWithin(v1.location::geography, v2.location::geography, 10000)
-  ORDER BY ST_Distance(v1.location::geography, v2.location::geography)
-);
-
-UPDATE villages
-SET shared_popular_businesses = ARRAY['grocery_store', 'fertilizer_shop', 'seed_supplier', 'tractor_service', 'cooperative_store'];
