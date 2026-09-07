@@ -1,3 +1,5 @@
+import { formatMessageContent } from "./chat-markdown.js";
+
 const tokenKey = "northstar_token";
 const chatSuggestions = document.querySelector("#chat-suggestions-select");
 const chatMessages = document.querySelector("#chat-messages");
@@ -23,79 +25,6 @@ function setChatStatus(message = "", kind = "") {
   if (!chatStatus) return;
   chatStatus.textContent = message;
   chatStatus.dataset.kind = kind;
-}
-
-function escapeHtml(value = "") {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function formatMessageContent(text = "") {
-  if (!text) return "";
-
-  const lines = String(text).replace(/\r\n/g, "\n").split("\n");
-  const htmlChunks = [];
-  let paragraphLines = [];
-  let listItems = [];
-
-  const flushParagraph = () => {
-    if (paragraphLines.length === 0) return;
-    const paragraph = paragraphLines.join("<br>");
-    htmlChunks.push(`<p>${paragraph}</p>`);
-    paragraphLines = [];
-  };
-
-  const flushList = () => {
-    if (listItems.length === 0) return;
-    htmlChunks.push(`<ul>${listItems.map((item) => `<li>${item}</li>`).join("")}</ul>`);
-    listItems = [];
-  };
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line) {
-      flushParagraph();
-      flushList();
-      continue;
-    }
-
-    if (/^---+$/.test(line)) {
-      flushParagraph();
-      flushList();
-      htmlChunks.push("<hr>");
-      continue;
-    }
-
-    if (/^#{1,3}\s+/.test(line)) {
-      flushParagraph();
-      flushList();
-      const level = Math.min(line.match(/^#+/)[0].length, 3);
-      const content = escapeHtml(line.replace(/^#+\s*/, ""));
-      htmlChunks.push(`<h${level}>${content}</h${level}>`);
-      continue;
-    }
-
-    if (/^[-*]\s+/.test(line)) {
-      flushParagraph();
-      listItems.push(escapeHtml(line.replace(/^[-*]\s*/, "")));
-      continue;
-    }
-
-    paragraphLines.push(escapeHtml(line));
-  }
-
-  flushParagraph();
-  flushList();
-
-  return htmlChunks
-    .join("")
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.*?)\*/g, "<em>$1</em>")
-    .replace(/`(.*?)`/g, "<code>$1</code>");
 }
 
 function renderThinkingIndicator() {

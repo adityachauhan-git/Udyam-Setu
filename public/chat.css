@@ -393,6 +393,25 @@ body.sidebar-collapsed .floating-sidebar-toggle {
   border-radius: 0.35rem;
   padding: 0.15rem 0.35rem;
 }
+.chat-message.assistant pre {
+  background: rgba(16, 42, 67, 0.06);
+  border-radius: 0.55rem;
+  overflow-x: auto;
+  padding: 0.8rem;
+  white-space: pre-wrap;
+}
+.chat-message.assistant blockquote {
+  border-left: 3px solid var(--accent, #8aa8bd);
+  color: var(--muted);
+  margin: 0.7rem 0 0;
+  padding-left: 0.85rem;
+}
+.chat-table-wrap { margin-top: 0.7rem; overflow-x: auto; }
+.chat-message.assistant table { border-collapse: collapse; min-width: 100%; text-align: left; }
+.chat-message.assistant th,
+.chat-message.assistant td { border: 1px solid rgba(16, 42, 67, 0.14); padding: 0.55rem 0.65rem; vertical-align: top; }
+.chat-message.assistant th { background: rgba(16, 42, 67, 0.06); font-weight: 700; }
+.chat-message.assistant a { color: var(--accent, #216e94); text-decoration: underline; }
 .chat-empty {
   color: var(--muted);
   font-size: 1.05rem;
