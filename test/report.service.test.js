@@ -29,22 +29,23 @@ test("structured report preserves factual competitor, pricing, risk, and channel
     threats: [{ risk_type: "fodder_shortage", severity: "high", description: "Seasonal shortage" }],
     distributionChannels: [{ name: "Dairy Chilling Route", channel_type: "cold_chain_route" }],
   };
-  const aiReply = JSON.stringify({
-    marketReach: { summary: "Reach exists", consumerBase: "No population count" },
-    opportunityAnalysis: { summary: "Potential exists", opportunities: ["Value-added dairy"], marketGaps: [] },
-    swot: { strengths: ["Skills"], weaknesses: [], opportunities: [], threats: [] },
-    threats: [{ risk: "fodder_shortage", mitigation: "Build local fodder supply" }],
-    competitorMapping: { competitorCount: 999, competitionLevel: "high", summary: "One nearby competitor", competitors: [{ name: "Invented" }] },
-    productPricing: { summary: "Use observed pricing", products: [{ price: 999 }] },
-  });
+  const sectionAnalyses = {
+    marketReach: { summary: "Reach exists", advice: ["Use the channel", "Measure demand", "Collect more data"] },
+    opportunityAnalysis: { summary: "Potential exists", advice: ["Test demand", "Compare costs", "Start small"] },
+    swot: { summary: "Profile and market signals show a possible fit", advice: ["Use skills", "Address gaps", "Plan for risks"] },
+    competitorMapping: { summary: "One nearby competitor is recorded", advice: ["Compare service", "Find a gap", "Pilot locally"] },
+    productPricing: { summary: "Observed pricing is available", advice: ["Use as reference", "Calculate costs", "Test rates"] },
+    threats: { summary: "One local risk is recorded", advice: ["Prioritize risk", "Keep reserve", "Review seasonally"] },
+  };
 
-  const report = buildStructuredReport(aiReply, localMarketContext);
+  const report = buildStructuredReport(sectionAnalyses, localMarketContext, {});
 
-  assert.equal(report.competitorMapping.competitorCount, 1);
-  assert.deepEqual(report.competitorMapping.competitors, localMarketContext.competitors);
-  assert.deepEqual(report.productPricing.products, localMarketContext.pricing);
-  assert.deepEqual(report.marketReach.distributionChannels, localMarketContext.distributionChannels);
-  assert.equal(report.threats[0].mitigation, "Build local fodder supply");
+  assert.equal(report.competitorMapping.data.competitorCount, 1);
+  assert.deepEqual(report.competitorMapping.data.competitors, localMarketContext.competitors);
+  assert.deepEqual(report.productPricing.data.products, localMarketContext.pricing);
+  assert.deepEqual(report.marketReach.data.distributionChannels, localMarketContext.distributionChannels);
+  assert.equal(report.threats.summary, "One local risk is recorded");
+  assert.equal(report.threats.advice.length, 3);
 });
 
 test("business category is required and normalized", () => {
@@ -70,22 +71,54 @@ test("report uses zero competitors and insufficient-data defaults when the radiu
     market: [], competitors: [], pricing: [], threats: [], distributionChannels: [],
   };
   const profile = { id: "profile-1", village_id: "village-1", skills: [], interests: [], goals: [] };
-  const aiReply = JSON.stringify({
-    marketReach: {}, opportunityAnalysis: {}, swot: {}, threats: [], competitorMapping: {}, productPricing: {},
-  });
-
   const result = await generateFeasibilityReport(
     { userId: "user-1", businessCategory: "dairy" },
     {
       getOnboarding: async () => profile,
       getLocalMarketContext: async () => context,
-      generateWithAi: async () => ({ reply: aiReply, provider: "groq", model: "test", fallbackUsed: false }),
+      generateWithAi: async () => ({ reply: JSON.stringify({ summary: "No local evidence is available.", advice: ["Collect data", "Run a pilot", "Review results"] }), provider: "groq", model: "test", fallbackUsed: false }),
     },
   );
 
-  assert.equal(result.report.competitorMapping.competitorCount, 0);
-  assert.equal(result.report.marketReach.summary, "Insufficient local market data for a detailed reach assessment.");
-  assert.equal(result.report.productPricing.products.length, 0);
+  assert.equal(result.report.competitorMapping.data.competitorCount, 0);
+  assert.equal(result.report.marketReach.summary, "No local evidence is available.");
+  assert.equal(result.report.productPricing.data.products.length, 0);
+  assert.equal(result.report.marketReach.advice.length, 3);
+});
+
+test("report makes one focused AI request per section and isolates failures", async () => {
+  const context = {
+    location: { village: "Test Village", district: "Test District", state: "Test State" },
+    businessCategory: "transport",
+    radiusKm: 10,
+    market: [], competitors: [], pricing: [], threats: [], distributionChannels: [],
+  };
+  const profile = { id: "profile-1", village_id: "village-1", skills: [], interests: [], goals: [] };
+  const calls = [];
+
+  const result = await generateFeasibilityReport(
+    { userId: "user-1", businessCategory: "transport" },
+    {
+      getOnboarding: async () => profile,
+      getLocalMarketContext: async () => context,
+      generateWithAi: async ([message]) => {
+        calls.push(message.parts[0].text);
+        if (calls.length === 2) throw new Error("temporary failure");
+        return { reply: JSON.stringify({ summary: `Summary ${calls.length}`, advice: ["One", "Two", "Three"] }), provider: "groq", model: "test", fallbackUsed: false };
+      },
+    },
+  );
+
+  assert.equal(calls.length, 6);
+  assert.ok(calls.some((call) => call.includes("market reach")));
+  assert.ok(calls.some((call) => call.includes("opportunity analysis")));
+  assert.ok(calls.some((call) => call.includes("SWOT")));
+  assert.ok(calls.some((call) => call.includes("competitor mapping")));
+  assert.ok(calls.some((call) => call.includes("product pricing")));
+  assert.ok(calls.some((call) => call.includes("threats")));
+  assert.equal(result.report.marketReach.advice.length, 3);
+  assert.equal(result.report.opportunityAnalysis.summary.startsWith("The available local"), true);
+  assert.equal(result.fallbackUsed, true);
 });
 
 test("report service enforces the fixed 10 km radius", async () => {

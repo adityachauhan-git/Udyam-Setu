@@ -85,7 +85,7 @@ The report displays observed products, prices, units, business names, and distan
 
 ### Factual-data protection
 
-The AI is instructed not to invent businesses, prices, population figures, competitors, risks, or numerical facts. The response must be JSON with exactly these top-level keys:
+The AI is instructed not to invent businesses, prices, population figures, competitors, risks, or numerical facts. The backend makes one focused AI request per report section. Each section returns a `summary` paragraph and three `advice` strings, while its `data` object is populated directly from PostgreSQL. The response contains exactly these top-level keys:
 
 ```text
 marketReach
@@ -96,7 +96,7 @@ competitorMapping
 productPricing
 ```
 
-The backend parses and validates the JSON, applies safe defaults, and replaces AI-supplied competitor, pricing, threat, and distribution records with the original database records.
+The backend parses each section independently, applies section-level fallbacks when necessary, and keeps competitor, pricing, threat, observation, and distribution records authoritative from PostgreSQL.
 
 ## 4. Module 2 — Smart Financial Calculator and Scheme Router
 
