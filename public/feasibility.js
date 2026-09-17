@@ -105,12 +105,12 @@ function appendAdviceV2(parent, advice) {
 }
 
 function renderMarketEvidenceV2(parent, data) {
-  parent.appendChild(element("h3", "Postgres market observations"));
+  parent.appendChild(element("h3", "Market evidence"));
   appendList(parent, (data.marketObservations || []).map((item) => `${formatLabel(item.observation_type)}: ${item.value} ${item.unit} - ${item.source_label} - ${item.distance_km} km`));
 }
 
 function renderChannelsV2(parent, channels) {
-  parent.appendChild(element("h3", "Postgres distribution channels"));
+  parent.appendChild(element("h3", "Distribution channels"));
   appendList(parent, (channels || []).map((item) => `${item.name} - ${formatLabel(item.channel_type)} - ${item.distance_km} km`));
 }
 
@@ -147,16 +147,16 @@ function renderReportV2(report) {
   const opportunity = createCard("Opportunity Analysis", opportunityReport.summary);
   appendAdviceV2(opportunity, opportunityReport.advice);
   renderMarketEvidenceV2(opportunity, opportunityData);
-  opportunity.appendChild(element("h3", "Postgres pricing evidence"));
+  opportunity.appendChild(element("h3", "Local pricing evidence"));
   renderPricingV2(opportunity, opportunityData.pricing);
-  opportunity.appendChild(element("h3", "Postgres competitors"));
+  opportunity.appendChild(element("h3", "Nearby competitors"));
   renderCompetitorsV2(opportunity, opportunityData.competitors);
   renderChannelsV2(opportunity, opportunityData.distributionChannels);
 
   const swot = createCard("SWOT", swotReport.summary);
   appendAdviceV2(swot, swotReport.advice);
   const onboarding = swotData.onboarding || {};
-  swot.appendChild(element("h3", "Postgres onboarding and resources"));
+  swot.appendChild(element("h3", "Your profile and resources"));
   appendList(swot, [
     `Skills: ${(onboarding.skills || []).join(", ") || "None recorded"}`,
     `Interests: ${(onboarding.interests || []).join(", ") || "None recorded"}`,
@@ -165,7 +165,7 @@ function renderReportV2(report) {
     `Land: ${onboarding.land?.area || "Not recorded"} ${onboarding.land?.unit || ""}`.trim(),
   ]);
   renderMarketEvidenceV2(swot, swotData);
-  swot.appendChild(element("h3", "Postgres risks"));
+  swot.appendChild(element("h3", "Local risks"));
   appendList(swot, (swotData.risks || []).map((item) => `${formatLabel(item.risk_type)} - ${formatLabel(item.severity)} - ${item.description} - ${item.distance_km} km`));
 
   const competitors = createCard("Competitor Mapping", competitorReport.summary);
