@@ -90,7 +90,10 @@ function parseJsonReply(reply) {
   try {
     return JSON.parse(json);
   } catch {
-    throw new AppError("AI returned an invalid feasibility report", 502);
+    logger.warn("service.report.feasibility.ai_reply_not_json", {
+      message: "Using database-backed values and insufficient-data defaults.",
+    });
+    return {};
   }
 }
 
@@ -103,11 +106,7 @@ function arrayOrEmpty(value) {
 }
 
 export function buildStructuredReport(aiReply, localMarketContext) {
-  const parsedReply = parseJsonReply(aiReply);
-  if (!parsedReply || typeof parsedReply !== "object" || Array.isArray(parsedReply)) {
-    throw new AppError("AI returned an invalid feasibility report", 502);
-  }
-  const generated = parsedReply;
+  const generated = objectOrEmpty(parseJsonReply(aiReply));
   const marketReach = objectOrEmpty(generated.marketReach);
   const opportunityAnalysis = objectOrEmpty(generated.opportunityAnalysis);
   const swot = objectOrEmpty(generated.swot);
