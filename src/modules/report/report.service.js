@@ -1,4 +1,5 @@
 import { AppError } from "../../common/errors/AppError.js";
+import { logger } from "../../common/utils/logger.js";
 import { generateWithAi } from "../chat/chat.service.js";
 import { getOnboarding } from "../onboarding/onboarding.service.js";
 import { findNearbyMarketData, findVillageLocation } from "./report.repository.js";
@@ -168,7 +169,13 @@ export async function generateFeasibilityReport({ userId, businessCategory }, de
   const aiContext = buildFeasibilityAiContext(localMarketContext, profile);
   const instruction = `Return only valid JSON with exactly these top-level keys: marketReach, opportunityAnalysis, swot, threats, competitorMapping, productPricing. Use the supplied database values as factual evidence. Do not invent facts. If a section lacks evidence, say that data is insufficient.\n\n${JSON.stringify(aiContext)}`;
   const aiResult = await generateReportWithAi([{ role: "user", parts: [{ text: instruction }] }]);
-  console.log(aiResult)
+  logger.info("service.report.feasibility.ai_reply", {
+    userId,
+    businessCategory: category,
+    provider: aiResult.provider,
+    model: aiResult.model,
+    reply: aiResult.reply,
+  });
 
   return {
     report: buildStructuredReport(aiResult.reply, localMarketContext),
