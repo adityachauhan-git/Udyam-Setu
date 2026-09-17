@@ -168,6 +168,7 @@ export async function generateFeasibilityReport({ userId, businessCategory }, de
   const aiContext = buildFeasibilityAiContext(localMarketContext, profile);
   const instruction = `Return only valid JSON with exactly these top-level keys: marketReach, opportunityAnalysis, swot, threats, competitorMapping, productPricing. Use the supplied database values as factual evidence. Do not invent facts. If a section lacks evidence, say that data is insufficient.\n\n${JSON.stringify(aiContext)}`;
   const aiResult = await generateReportWithAi([{ role: "user", parts: [{ text: instruction }] }]);
+  console.log(aiResult)
 
   return {
     report: buildStructuredReport(aiResult.reply, localMarketContext),
