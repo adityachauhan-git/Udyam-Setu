@@ -125,23 +125,37 @@ function renderPricingV2(parent, products, emptyMessage = "No matching local pri
 function renderReportV2(report) {
   reportContent.replaceChildren();
 
-  const marketReach = createCard("Market Reach", report.marketReach.summary);
-  appendAdviceV2(marketReach, report.marketReach.advice);
-  renderMarketEvidenceV2(marketReach, report.marketReach.data);
-  renderChannelsV2(marketReach, report.marketReach.data.distributionChannels);
+  const section = (name) => ({ summary: "No analysis was returned for this section.", advice: [], data: {}, ...(report?.[name] || {}) });
+  const marketReachReport = section("marketReach");
+  const opportunityReport = section("opportunityAnalysis");
+  const swotReport = section("swot");
+  const competitorReport = section("competitorMapping");
+  const pricingReport = section("productPricing");
+  const threatsReport = section("threats");
+  const marketReachData = marketReachReport.data || {};
+  const opportunityData = opportunityReport.data || {};
+  const swotData = swotReport.data || {};
+  const competitorData = competitorReport.data || {};
+  const pricingData = pricingReport.data || {};
+  const threatsData = threatsReport.data || {};
 
-  const opportunity = createCard("Opportunity Analysis", report.opportunityAnalysis.summary);
-  appendAdviceV2(opportunity, report.opportunityAnalysis.advice);
-  renderMarketEvidenceV2(opportunity, report.opportunityAnalysis.data);
+  const marketReach = createCard("Market Reach", marketReachReport.summary);
+  appendAdviceV2(marketReach, marketReachReport.advice);
+  renderMarketEvidenceV2(marketReach, marketReachData);
+  renderChannelsV2(marketReach, marketReachData.distributionChannels);
+
+  const opportunity = createCard("Opportunity Analysis", opportunityReport.summary);
+  appendAdviceV2(opportunity, opportunityReport.advice);
+  renderMarketEvidenceV2(opportunity, opportunityData);
   opportunity.appendChild(element("h3", "Postgres pricing evidence"));
-  renderPricingV2(opportunity, report.opportunityAnalysis.data.pricing);
+  renderPricingV2(opportunity, opportunityData.pricing);
   opportunity.appendChild(element("h3", "Postgres competitors"));
-  renderCompetitorsV2(opportunity, report.opportunityAnalysis.data.competitors);
-  renderChannelsV2(opportunity, report.opportunityAnalysis.data.distributionChannels);
+  renderCompetitorsV2(opportunity, opportunityData.competitors);
+  renderChannelsV2(opportunity, opportunityData.distributionChannels);
 
-  const swot = createCard("SWOT", report.swot.summary);
-  appendAdviceV2(swot, report.swot.advice);
-  const onboarding = report.swot.data.onboarding || {};
+  const swot = createCard("SWOT", swotReport.summary);
+  appendAdviceV2(swot, swotReport.advice);
+  const onboarding = swotData.onboarding || {};
   swot.appendChild(element("h3", "Postgres onboarding and resources"));
   appendList(swot, [
     `Skills: ${(onboarding.skills || []).join(", ") || "None recorded"}`,
@@ -150,22 +164,22 @@ function renderReportV2(report) {
     `Capital range: ${onboarding.capitalRange || "Not recorded"}`,
     `Land: ${onboarding.land?.area || "Not recorded"} ${onboarding.land?.unit || ""}`.trim(),
   ]);
-  renderMarketEvidenceV2(swot, report.swot.data);
+  renderMarketEvidenceV2(swot, swotData);
   swot.appendChild(element("h3", "Postgres risks"));
-  appendList(swot, (report.swot.data.risks || []).map((item) => `${formatLabel(item.risk_type)} - ${formatLabel(item.severity)} - ${item.description} - ${item.distance_km} km`));
+  appendList(swot, (swotData.risks || []).map((item) => `${formatLabel(item.risk_type)} - ${formatLabel(item.severity)} - ${item.description} - ${item.distance_km} km`));
 
-  const competitors = createCard("Competitor Mapping", report.competitorMapping.summary);
-  appendAdviceV2(competitors, report.competitorMapping.advice);
-  competitors.appendChild(element("p", `${report.competitorMapping.data.competitorCount} nearby competitors within 10 km`, "report-detail"));
-  renderCompetitorsV2(competitors, report.competitorMapping.data.competitors);
+  const competitors = createCard("Competitor Mapping", competitorReport.summary);
+  appendAdviceV2(competitors, competitorReport.advice);
+  competitors.appendChild(element("p", `${competitorData.competitorCount || 0} nearby competitors within 10 km`, "report-detail"));
+  renderCompetitorsV2(competitors, competitorData.competitors);
 
-  const pricing = createCard("Product Pricing", report.productPricing.summary);
-  appendAdviceV2(pricing, report.productPricing.advice);
-  renderPricingV2(pricing, report.productPricing.data.products);
+  const pricing = createCard("Product Pricing", pricingReport.summary);
+  appendAdviceV2(pricing, pricingReport.advice);
+  renderPricingV2(pricing, pricingData.products);
 
-  const threats = createCard("Threats", report.threats.summary);
-  appendAdviceV2(threats, report.threats.advice);
-  appendList(threats, (report.threats.data.risks || []).map((item) => `${formatLabel(item.risk_type)} - ${formatLabel(item.severity)} - ${item.description} - ${item.distance_km} km`), "No nearby risks were found within 10 km.");
+  const threats = createCard("Threats", threatsReport.summary);
+  appendAdviceV2(threats, threatsReport.advice);
+  appendList(threats, (threatsData.risks || []).map((item) => `${formatLabel(item.risk_type)} - ${formatLabel(item.severity)} - ${item.description} - ${item.distance_km} km`), "No nearby risks were found within 10 km.");
 
   [marketReach, opportunity, swot, competitors, pricing, threats].forEach((card) => reportContent.appendChild(card));
 }
